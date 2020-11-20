@@ -14,7 +14,7 @@ function [e, c, g, a, hl, indic] = chs(indic,xy,lm)
   nn = length(xy)/2; % nombre noeuds(sauf extrémités)
   
   % vérification la bonne entrées
-  if nn*2 ~=length(xy)
+  if mod(length(xy),2)==1
     indic = EXIT_FAILURE; % length(xy) impaire
     return
   endif
@@ -50,6 +50,10 @@ function [e, c, g, a, hl, indic] = chs(indic,xy,lm)
 
     case 5 % calcul de hl hessien de lagrangien
       printf("in case %d\n", indic);
+      if length(lm) != nb
+        indic = EXIT_FAILURE; 
+        return
+      endif     
       [hl] = calcul_hl(nn,nb,lm);
       indic = EXIT_SUCESS;
       return
@@ -109,6 +113,7 @@ function [g, a] = cal_g_a(nn,nb,xy)
   a(nb,2*nn) = -diff2(2*nb);
   return
 endfunction
+
 
 function [hl] = calcul_hl(nn,nb,lm)
   hl = sparse(2*nn,2*nn); 
