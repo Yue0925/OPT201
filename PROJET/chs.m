@@ -37,13 +37,13 @@ function [e, c, g, a, hl, indic] = chs(indic,xy,lm)
       
     case 2 % calcul de e, c
       printf("in case %d\n", indic);
-      [e, c] = cal_e_c(c,nb,x_complet,y_complet);
+      [e, c] = cal_e_c(nb,x_complet,y_complet);
       indic = EXIT_SUCESS;
       return
       
     case 4 % calcul de e, c, g, a
       printf("in case %d\n", indic);
-      [e, c] = cal_e_c(c,nb,x_complet,y_complet);
+      [e, c] = cal_e_c(nb,x_complet,y_complet);
       [g, a] = cal_g_a(nn,nb,xy);
       indic = EXIT_SUCESS;
       return
@@ -63,13 +63,14 @@ function [e, c, g, a, hl, indic] = chs(indic,xy,lm)
 endfunction
 
 
-function [e, c] = cal_e_c(c,nb,x_complet,y_complet)
+function [e, c] = cal_e_c(nb,x_complet,y_complet)
   global A B L
   e = 0;
+  c = zeros(nb, 1);
   for i = 2:nb+1
     l_i = sqrt( (x_complet(i) - x_complet(i-1))^2 + (y_complet(i) - y_complet(i-1))^2 );
     e = e + l_i * (y_complet(i) + y_complet(i-1))/2; % énergie
-    c(end+1) = l_i^2 - L(i-1)^2; % contrainte
+    c(i-1) = l_i^2 - L(i-1)^2; % contrainte
   endfor
   return
 endfunction
@@ -110,7 +111,7 @@ function [g, a] = cal_g_a(nn,nb,xy)
 endfunction
 
 function [hl] = calcul_hl(nn,nb,lm)
-  hl = sparse(2*nn,2*nn);
+  hl = sparse(2*nn,2*nn); 
   hl(1,1) = 2*lm(1);
   hl(nn+1,nn+1) = 2*lm(1);
   hl(nn,nn) = 2*lm(nb);
