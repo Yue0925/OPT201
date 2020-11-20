@@ -8,7 +8,6 @@ xy = [0.2   0.4   0.6   0.8   ...
       -1.0   -1.5   -1.5   -1.3]';
       
 lm = [];
-indic = 4;
 
 for indic = 1:5
   [e, c, g, a, hl, indic] = chs(indic, xy, lm)
