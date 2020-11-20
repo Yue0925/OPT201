@@ -47,6 +47,12 @@ function [e, c, g, a, hl, indic] = chs(indic,xy,lm)
       [g, a] = cal_g_a(nn,nb,xy);
       indic = EXIT_SUCESS;
       return
+
+    case 5 % calcul de hl hessien de lagrangien
+      printf("in case %d\n", indic);
+      [hl] = calcul_hl(nn,nb,lm);
+      indic = EXIT_SUCESS;
+      return
       
     otherwise
       printf("ERROR invalid indic number %d\n ", indic);
@@ -82,20 +88,42 @@ function [g, a] = cal_g_a(nn,nb,xy)
   for i = 2:nn
     diff2(end+1) = 2*(xy(i) - xy(i-1));
   endfor
-  diff2(end+1) = 2*(xy(nn)-A); % 2(x_n-A)
+  diff2(end+1) = 2*(A-xy(nn)); % 2(A-x_n)
   
   diff2(end+1) = 2*xy(nn+1); % 2(y_1 - y_0)
   for i = nn+2:2*nn
     diff2(end+1) = 2*(xy(i) - xy(i-1));
   endfor
-  diff2(end+1) = 2*(xy(2*nn)-B);
+  diff2(end+1) = 2*(B-xy(2*nn));
 
-  for i=1:nn;
+  a(1,1) = diff2(1);
+  a(1,1+nn) = diff2(1+nb);
+  for i=2:nn;
     a(i,i) = diff2(i);
+    a(i,i-1) = -diff2(i);
     a(i,nn+i) = diff2(nb+i);
+    a(i,nn+i-1) = -diff2(nb+i);
   endfor
-  a(nb,nn) = diff2(nb);
-  a(nb,2*nn) = diff2(2*nb);
+  a(nb,nn) = -diff2(nb);
+  a(nb,2*nn) = -diff2(2*nb);
   return
 endfunction
 
+function [hl] = calcul_hl(nn,nb,lm)
+  hl = sparse(2*nn,2*nn);
+  hl(1,1) = 2*lm(1);
+  hl(nn+1,nn+1) = 2*lm(1);
+  hl(nn,nn) = 2*lm(nb);
+  hl(2*nn,2*nn) = 2*lm(nb);
+  for i = 2:nn
+    hl(i,i) = hl(i,i)+2*lm(i);
+    hl(i,i-1) = hl(i,i-1)-2*lm(i);
+    hl(i-1,i) = hl(i-1,i)-2*lm(i);
+    hl(i-1,i-1) = hl(i-1,i-1)+2*lm(i);
+    hl(i+nn,i+nn) = hl(i+nn,i+nn)+2*lm(i);
+    hl(i+nn,i-1+nn) = hl(i+nn,i-1+nn)-2*lm(i);
+    hl(i-1+nn,i+nn) = hl(i-1+nn,i+nn)-2*lm(i);
+    hl(i-1+nn,i-1+nn) = hl(i-1+nn,i-1+nn)+2*lm(i);
+  endfor
+  return
+endfunction
