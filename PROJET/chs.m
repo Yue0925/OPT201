@@ -1,5 +1,5 @@
 function [e, c, g, a, hl, indic] = chs(indic,xy,lm)
-  global A B L
+  global A B L 
   
   EXIT_SUCESS = 0; % sortie normale 
   EXIT_FAILURE = 1; % paramètre(s) d’entrée non correct(s)
@@ -12,6 +12,7 @@ function [e, c, g, a, hl, indic] = chs(indic,xy,lm)
   hl = [];
 
   nn = length(xy)/2; % nombre noeuds(sauf extrémités)
+  nb = nn+1; % nombre barres
   
   % vérification la bonne entrées
   if mod(length(xy),2)==1
@@ -19,55 +20,55 @@ function [e, c, g, a, hl, indic] = chs(indic,xy,lm)
     return
   endif
   
-  nb = nn+1; % nombre barres
-  x = xy(1:nn); 
-  y = xy(nn+1 : end);
+  x = xy(1:nn); % abscisses des noeuds
+  y = xy(nn+1 : end); % ordonnées de noeuds
   
-  x_complet = [0;x;A]; % les coordonées en ajoutant deux extrémités
-  y_complet = [0;y;B];
+  x_complet = [0;x;A]; % les abscisses en ajoutant les deux extrémités
+  y_complet = [0;y;B]; % les ordonnées en ajoutant les deux extrémités
   
   % pilote indic
   switch (indic)
     
     case 1 % tracer la chaîne
       printf("in case %d\n", indic);
-      plot(x_complet, y_complet, '-b')
+      plot(x_complet, y_complet, '-b') % tracé de la chaîne
       indic = EXIT_SUCESS;
       return
       
     case 2 % calcul de e, c
       printf("in case %d\n", indic);
-      [e, c] = cal_e_c(nb,x_complet,y_complet);
+      [e, c] = cal_e_c(nb,x_complet,y_complet); % calcul de e et c
       indic = EXIT_SUCESS;
       return
       
     case 4 % calcul de e, c, g, a
       printf("in case %d\n", indic);
-      [e, c] = cal_e_c(nb,x_complet,y_complet);
-      [g, a] = cal_g_a(nn,nb,xy);
+      [e, c] = cal_e_c(nb,x_complet,y_complet); % calcul de e et c
+      [g, a] = cal_g_a(nn,nb,xy); % calcul de g et a
       indic = EXIT_SUCESS;
       return
 
     case 5 % calcul de hl hessien de lagrangien
       printf("in case %d\n", indic);
       if length(lm) != nb
-        indic = EXIT_FAILURE; 
+        indic = EXIT_FAILURE; % longueur de lm différent de nb
         return
       endif     
-      [hl] = calcul_hl(nn,nb,lm);
+      [hl] = calcul_hl(nn,nb,lm); % calcul de hl
       indic = EXIT_SUCESS;
       return
       
     otherwise
       printf("ERROR invalid indic number %d\n ", indic);
-      indic = EXIT_FAILURE;
+      indic = EXIT_FAILURE; % valeur indic différent de 1,2,4 et 5
       return
+      
    endswitch
 
 endfunction
 
 
-function [e, c] = cal_e_c(nb,x_complet,y_complet)
+function [e, c] = cal_e_c(nb,x_complet,y_complet) % fonction qui calcule e et c
   global A B L
   e = 0;
   c = zeros(nb, 1);
@@ -80,7 +81,7 @@ function [e, c] = cal_e_c(nb,x_complet,y_complet)
 endfunction
 
 
-function [g, a] = cal_g_a(nn,nb,xy)
+function [g, a] = cal_g_a(nn,nb,xy) % fonction qui calcule g et a
   global A B L
   g = zeros(2*nn, 1); % gradient de xy
   for i =1:nb-1
@@ -115,7 +116,7 @@ function [g, a] = cal_g_a(nn,nb,xy)
 endfunction
 
 
-function [hl] = calcul_hl(nn,nb,lm)
+function [hl] = calcul_hl(nn,nb,lm) % fonction qui calcule hl
   hl = sparse(2*nn,2*nn); 
   hl(1,1) = 2*lm(1);
   hl(nn+1,nn+1) = 2*lm(1);
