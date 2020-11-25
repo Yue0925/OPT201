@@ -47,6 +47,7 @@ function [e, c, g, a, hl, indic] = chs(indic,xy,lm)
       [g] = cal_g(xy);
       verify_gradient(xy);
       [a] = cal_a(xy);
+      verify_Jacobian(xy);
       indic = EXIT_SUCESS;
       return
 
@@ -203,11 +204,10 @@ endfunction
 
 
 % calcul dérivées de i-ième composant
-function [df] = cal_df(phi, i, xy)
+function [df, t_i] = cal_df(phi, i, xy)
   t_i = sqrt(eps) * max(1, abs(xy(i)));
-  e_i = double(1:length(xy) == i);
-  printf("%d \t %e \t", i, t_i);
-  df = (phi(xy + (t_i*e_i)') - phi(xy - (t_i*e_i)') ) / (2 * t_i);
+  e_i = double(1:length(xy) == i); % vector ligne
+  df = (phi(xy + (t_i*e_i)') - phi(xy - (t_i*e_i)') ) / (2 * t_i); % d'abord transformer en vec colonne
   return
 endfunction
 
@@ -217,11 +217,12 @@ endfunction
 function verify_gradient(xy)
   printf("Vérification gradient \n");
   printf("i \t pas \t \t f'(i) \t \t DF \t \t erreur \t \t < 10e-8? \n");
-  g = cal_g(xy); %gradient
+  g = cal_g(xy); % gradient
   for i=1:length(xy)
-    df = cal_df(@cal_e, i, xy);
+    [df, t_i] = cal_df(@cal_e, i, xy);
+    printf("%d \t %e \t", i, t_i);
     printf("%e \t %e \t ", g(i), df);
-    erreur = abs(df - g(i)); %erreur absolue
+    erreur = abs(df - g(i)); % erreur absolue
     if abs(g(i))!=0
       erreur = erreur/abs(g(i)); % erreur relaive
       printf("%e rel \t", erreur);
@@ -234,6 +235,31 @@ function verify_gradient(xy)
       printf("FALSE \n");
     endif
   endfor
+endfunction
+
+
+
+% calcul Jacobians
+function [jacobian] = cal_Jacob(phi, xy)
+  lin = length(phi(xy));
+  col = length(xy);
+  jacobian = sparse(lin, col);
+
+  for i=1:col
+    [jacobian(1:end, i), t_i] = cal_df(phi, i, xy);
+  endfor
+endfunction
+
+
+
+function verify_Jacobian(xy)
+  printf("Vérification Jacobians \n");
+  [jacobian] = cal_Jacob(@cal_c, xy);
+  [a] = cal_a(xy);
+  err_abs = abs(jacobian - a);
+  err_abs
+  printf("erreurs absolues < 10e-8? (1:TRUE; 0:FALSE) \n");
+  err_abs < 10e-8
 endfunction
 
 
