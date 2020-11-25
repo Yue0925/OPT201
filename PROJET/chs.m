@@ -1,8 +1,7 @@
 function [e, c, g, a, hl, indic] = chs(indic,xy,lm)
-  global A B L 
   
-  EXIT_SUCESS = 0; % sortie normale 
-  EXIT_FAILURE = 1; % paramètre(s) d’entrée non correct(s)
+  global EXIT_SUCESS = 0; % sortie normale 
+  global EXIT_FAILURE = 1; % paramètre(s) d’entrée non correct(s)
 
   % initialisation des output de fonction
   e = [];
@@ -10,9 +9,9 @@ function [e, c, g, a, hl, indic] = chs(indic,xy,lm)
   g = [];
   a = [];
   hl = [];
-
-  nn = length(xy)/2; % nombre noeuds(sauf extrémités)
-  nb = nn+1; % nombre barres
+  
+  % pré-calculs et vérifier les données en entrées
+  [nn, nb, x, y, x_complet, y_complet] = pre_calcul(xy);
   
   % vérification la bonne entrées
   if mod(length(xy),2)==1
@@ -20,11 +19,10 @@ function [e, c, g, a, hl, indic] = chs(indic,xy,lm)
     return
   endif
   
-  x = xy(1:nn); % abscisses des noeuds
-  y = xy(nn+1 : end); % ordonnées de noeuds
-  
-  x_complet = [0;x;A]; % les abscisses en ajoutant les deux extrémités
-  y_complet = [0;y;B]; % les ordonnées en ajoutant les deux extrémités
+  if length(lm) != nb
+    indic = EXIT_FAILURE; % longueur de lm différent de nb
+    return
+  endif 
   
   % pilote indic
   switch (indic)
@@ -37,57 +35,100 @@ function [e, c, g, a, hl, indic] = chs(indic,xy,lm)
       
     case 2 % calcul de e, c
       printf("in case %d\n", indic);
-      [e, c] = cal_e_c(nb,x_complet,y_complet); % calcul de e et c
+      [e] = cal_e(xy);
+      [c] = cal_c(xy);
       indic = EXIT_SUCESS;
       return
       
     case 4 % calcul de e, c, g, a
       printf("in case %d\n", indic);
-      [e, c] = cal_e_c(nb,x_complet,y_complet); % calcul de e et c
-      [g, a] = cal_g_a(nn,nb,xy); % calcul de g et a
+      [e] = cal_e(xy);
+      [c] = cal_c(xy);
+      [g] = cal_g(xy);
+      verify_gradient(xy);
+      [a] = cal_a(xy);
       indic = EXIT_SUCESS;
       return
 
     case 5 % calcul de hl hessien de lagrangien
       printf("in case %d\n", indic);
-      if length(lm) != nb
-        indic = EXIT_FAILURE; % longueur de lm différent de nb
-        return
-      endif     
-      [hl] = calcul_hl(nn,nb,lm); % calcul de hl
+      [hl] = calcul_hl2(xy,lm);  % calcul de hl
       indic = EXIT_SUCESS;
       return
       
     otherwise
       printf("ERROR invalid indic number %d\n ", indic);
-      indic = EXIT_FAILURE; % valeur indic différent de 1,2,4 et 5
+      indic = EXIT_FAILURE;
       return
-      
    endswitch
 
 endfunction
 
 
-function [e, c] = cal_e_c(nb,x_complet,y_complet) % fonction qui calcule e et c
-  global A B L
+
+% pre-calcul / traitements les donées en entrées
+function [nn, nb, x, y, x_complet, y_complet] = pre_calcul(xy)
+  global A B EXIT_FAILURE
+  
+  nn = length(xy)/2; % nombre noeuds(sauf extrémités)
+  nb = nn+1; % nombre barres
+  
+  x = xy(1:nn); 
+  y = xy(nn+1 : end);
+  
+  x_complet = [0;x;A]; % les abscisses en ajoutant les deux extrémités
+  y_complet = [0;y;B]; % les ordonnées en ajoutant les deux extrémités
+endfunction
+
+
+
+% fonction qui calcule e énergie potentielle
+function [e] = cal_e(xy)
+  global L
+  [nn, nb, x, y, x_complet, y_complet] = pre_calcul(xy);
   e = 0;
+  
+  for i = 2:nb+1
+    e = e + L(i-1) * (y_complet(i) + y_complet(i-1))/2; % énergie
+  endfor
+  return
+endfunction
+
+
+
+% fonction qui calcule c les contraintes
+function [c] = cal_c(xy)
+  global L
+  [nn, nb, x, y, x_complet, y_complet] = pre_calcul(xy);
   c = zeros(nb, 1);
+
   for i = 2:nb+1
     l_i = sqrt( (x_complet(i) - x_complet(i-1))^2 + (y_complet(i) - y_complet(i-1))^2 );
-    e = e + l_i * (y_complet(i) + y_complet(i-1))/2; % énergie
     c(i-1) = l_i^2 - L(i-1)^2; % contrainte
   endfor
   return
 endfunction
 
 
-function [g, a] = cal_g_a(nn,nb,xy) % fonction qui calcule g et a
-  global A B L
+
+% fonction qui calcule g le gradient
+function [g] = cal_g(xy)
+  global L
+  [nn, nb, x, y, x_complet, y_complet] = pre_calcul(xy);
+  
   g = zeros(2*nn, 1); % gradient de xy
   for i =1:nb-1
     g(i+nn) = (L(i) + L(i+1))/2;
   endfor
-  
+  return
+endfunction
+
+
+
+% fonction qui calcule a Jacobians des contraintes
+function [a] = cal_a(xy)
+  global A B
+  [nn, nb, x, y, x_complet, y_complet] = pre_calcul(xy);
   a = sparse(nb,2*nn);
   
   diff2 = [2*xy(1)]; %2(x_1-x_0)
@@ -116,7 +157,11 @@ function [g, a] = cal_g_a(nn,nb,xy) % fonction qui calcule g et a
 endfunction
 
 
-function [hl] = calcul_hl(nn,nb,lm) % fonction qui calcule hl
+
+% fct calcul hessien prmière version
+function [hl] = calcul_hl(xy,lm)
+  [nn, nb, x, y, x_complet, y_complet] = pre_calcul(xy);
+  
   hl = sparse(2*nn,2*nn); 
   hl(1,1) = 2*lm(1);
   hl(nn+1,nn+1) = 2*lm(1);
@@ -134,3 +179,61 @@ function [hl] = calcul_hl(nn,nb,lm) % fonction qui calcule hl
   endfor
   return
 endfunction
+
+
+
+% version plus comprehensible, les deux fcts sont équivalentes
+function [hl] = calcul_hl2(xy,lm)
+  [nn, nb, x, y, x_complet, y_complet] = pre_calcul(xy);
+  hl = sparse(2*nn,2*nn); 
+  
+  hl(1,1) = 2*(lm(1)+lm(2));
+  hl(nn+1,nn+1) = 2*(lm(1)+lm(2));
+  for i = 2:nn
+    hl(i,i) = 2*(lm(i)+lm(i+1));
+    hl(i,i-1) = -2*lm(i);
+    hl(i-1,i) = -2*lm(i);
+    hl(i+nn,i+nn) = 2*(lm(i)+lm(i+1));
+    hl(i+nn,i-1+nn) = -2*lm(i);
+    hl(i-1+nn,i+nn) = -2*lm(i);
+  endfor
+  return
+endfunction
+
+
+
+% calcul dérivées de i-ième composant
+function [df] = cal_df(phi, i, xy)
+  t_i = sqrt(eps) * max(1, abs(xy(i)));
+  e_i = double(1:length(xy) == i);
+  printf("%d \t %e \t", i, t_i);
+  df = (phi(xy + (t_i*e_i)') - phi(xy - (t_i*e_i)') ) / (2 * t_i);
+  return
+endfunction
+
+
+
+% Vérification gradient
+function verify_gradient(xy)
+  printf("Vérification gradient \n");
+  printf("i \t pas \t \t f'(i) \t \t DF \t \t erreur \t \t < 10e-8? \n");
+  g = cal_g(xy); %gradient
+  for i=1:length(xy)
+    df = cal_df(@cal_e, i, xy);
+    printf("%e \t %e \t ", g(i), df);
+    erreur = abs(df - g(i)); %erreur absolue
+    if abs(g(i))!=0
+      erreur = erreur/abs(g(i)); % erreur relaive
+      printf("%e rel \t", erreur);
+    else
+      printf("%e abs \t", erreur);
+    endif
+    if erreur < 10e-8
+      printf("TRUE \n");
+    else
+      printf("FALSE \n");
+    endif
+  endfor
+endfunction
+
+
