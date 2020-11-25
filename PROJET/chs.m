@@ -256,10 +256,10 @@ function verify_Jacobian(xy)
   printf("Vérification Jacobians \n");
   [jacobian] = cal_Jacob(@cal_c, xy);
   [a] = cal_a(xy);
-  err_abs = abs(jacobian - a);
-  err_abs
-  printf("erreurs absolues < 10e-8? (1:TRUE; 0:FALSE) \n");
-  err_abs < 10e-8
+  erreurs = abs(jacobian - a) / abs(a);
+  erreurs
+  printf("erreurs relatives < 10e-8? (1:TRUE; 0:FALSE) \n");
+  erreurs < 10e-8
 endfunction
 
 
