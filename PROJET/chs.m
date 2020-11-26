@@ -53,7 +53,8 @@ function [e, c, g, a, hl, indic] = chs(indic,xy,lm)
 
     case 5 % calcul de hl hessien de lagrangien
       printf("in case %d\n", indic);
-      [hl] = calcul_hl2(xy,lm);  % calcul de hl
+      [hl] = calcul_hl(xy,lm);  % calcul de hl
+      %verify_Hess_Lag(xy, lm);
       indic = EXIT_SUCESS;
       return
       
@@ -62,7 +63,6 @@ function [e, c, g, a, hl, indic] = chs(indic,xy,lm)
       indic = EXIT_FAILURE;
       return
    endswitch
-
 endfunction
 
 
@@ -159,32 +159,8 @@ endfunction
 
 
 
-% fct calcul hessien prmière version
+% calcul de la matrice hessien de lagrangien
 function [hl] = calcul_hl(xy,lm)
-  [nn, nb, x, y, x_complet, y_complet] = pre_calcul(xy);
-  
-  hl = sparse(2*nn,2*nn); 
-  hl(1,1) = 2*lm(1);
-  hl(nn+1,nn+1) = 2*lm(1);
-  hl(nn,nn) = 2*lm(nb);
-  hl(2*nn,2*nn) = 2*lm(nb);
-  for i = 2:nn
-    hl(i,i) = hl(i,i)+2*lm(i);
-    hl(i,i-1) = hl(i,i-1)-2*lm(i);
-    hl(i-1,i) = hl(i-1,i)-2*lm(i);
-    hl(i-1,i-1) = hl(i-1,i-1)+2*lm(i);
-    hl(i+nn,i+nn) = hl(i+nn,i+nn)+2*lm(i);
-    hl(i+nn,i-1+nn) = hl(i+nn,i-1+nn)-2*lm(i);
-    hl(i-1+nn,i+nn) = hl(i-1+nn,i+nn)-2*lm(i);
-    hl(i-1+nn,i-1+nn) = hl(i-1+nn,i-1+nn)+2*lm(i);
-  endfor
-  return
-endfunction
-
-
-
-% version plus comprehensible, les deux fcts sont équivalentes
-function [hl] = calcul_hl2(xy,lm)
   [nn, nb, x, y, x_complet, y_complet] = pre_calcul(xy);
   hl = sparse(2*nn,2*nn); 
   
@@ -213,9 +189,9 @@ endfunction
 
 
 
-% Vérification gradient
+% Vérification gradient affichage un composant par un
 function verify_gradient(xy)
-  printf("Vérification gradient \n");
+  printf("Vérification vecteur gradient \n");
   printf("i \t pas \t \t f'(i) \t \t DF \t \t erreur \t \t < 10e-8? \n");
   g = cal_g(xy); % gradient
   for i=1:length(xy)
@@ -248,6 +224,7 @@ function [jacobian] = cal_Jacob(phi, xy)
   for i=1:col
     [jacobian(1:end, i), t_i] = cal_df(phi, i, xy);
   endfor
+  return
 endfunction
 
 
@@ -256,10 +233,54 @@ function verify_Jacobian(xy)
   printf("Vérification Jacobians \n");
   [jacobian] = cal_Jacob(@cal_c, xy);
   [a] = cal_a(xy);
-  erreurs = abs(jacobian - a) / abs(a);
-  erreurs
+  erreurs = abs(jacobian - a) ./ abs(a);
+  %erreurs
   printf("erreurs relatives < 10e-8? (1:TRUE; 0:FALSE) \n");
   erreurs < 10e-8
+endfunction
+
+
+
+global I=0;
+
+% calcul hessien de lagrangien de i-ème composant
+% on vérifie pour chaque composant de Jacob son n composants (en supposant dérivées premiers correctes)
+function [hess_lag] = cal_Hess_Lag(xy, lm)
+  global I
+  nn = length(xy);
+  hess_lag = sparse(nn,nn);
+  
+  for j=1:length(lm)
+    I = j;
+    tmp = sparse(nn,nn);
+    for i=1:nn
+      [HL_compo, t_i] = cal_df(@tmp, i, xy);
+      tmp(1:end,i) = HL_compo;
+    endfor
+    hess_lag = hess_lag + tmp *lm(j);
+  endfor
+  %hess_lag
+  return
+endfunction
+
+
+
+%i-ème ligne du Jacobians
+function [comp_i] = tmp(xy)
+  global I
+  [jacobian] = cal_Jacob(@cal_c, xy);
+  comp_i = jacobian(I,1:end)';
+endfunction
+
+
+
+function verify_Hess_Lag(xy, lm)
+  [hess_lag] = cal_Hess_Lag(xy, lm);
+  [hl] = calcul_hl(xy,lm);
+  erreur = abs(hess_lag - hl)/abs(hl);
+  %hess_lag
+  erreur
+  erreur < 10e-8
 endfunction
 
 
