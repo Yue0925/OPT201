@@ -56,7 +56,7 @@ function [e, c, g, a, hl, indic] = chs(indic,xy,lm)
       [hl] = calcul_hl(xy,lm);  % calcul de hl
       %verify_Hess_Lag(xy, lm);
       indic = EXIT_SUCESS;
-      return
+      
       
     otherwise
       printf("ERROR invalid indic number %d\n ", indic);
@@ -87,11 +87,8 @@ endfunction
 function [e] = cal_e(xy)
   global L
   [nn, nb, x, y, x_complet, y_complet] = pre_calcul(xy);
-  e = 0;
   
-  for i = 2:nb+1
-    e = e + L(i-1) * (y_complet(i) + y_complet(i-1))/2; % énergie
-  endfor
+  e = sum((y_complet(2:nb+1) + y_complet(1:nn+1))./2 .* L(1:nb)); % énergie
   return
 endfunction
 
@@ -101,12 +98,8 @@ endfunction
 function [c] = cal_c(xy)
   global L
   [nn, nb, x, y, x_complet, y_complet] = pre_calcul(xy);
-  c = zeros(nb, 1);
-
-  for i = 2:nb+1
-    l_i = sqrt( (x_complet(i) - x_complet(i-1))^2 + (y_complet(i) - y_complet(i-1))^2 );
-    c(i-1) = l_i^2 - L(i-1)^2; % contrainte
-  endfor
+  
+  c = (x_complet(2:nb+1) - x_complet(1:nb)).^2 + (y_complet(2:nb+1) - y_complet(1:nb)).^2 - L(1:nb).^2; % contrainte
   return
 endfunction
 
@@ -117,10 +110,7 @@ function [g] = cal_g(xy)
   global L
   [nn, nb, x, y, x_complet, y_complet] = pre_calcul(xy);
   
-  g = zeros(2*nn, 1); % gradient de xy
-  for i =1:nb-1
-    g(i+nn) = (L(i) + L(i+1))/2;
-  endfor
+  g = [zeros(nn,1); (L(1:nn)+L(2:nb))/2]; % gradient de xy
   return
 endfunction
 
@@ -130,30 +120,10 @@ endfunction
 function [a] = cal_a(xy)
   global A B
   [nn, nb, x, y, x_complet, y_complet] = pre_calcul(xy);
-  a = sparse(nb,2*nn);
   
-  diff2 = [2*xy(1)]; %2(x_1-x_0)
-  for i = 2:nn
-    diff2(end+1) = 2*(xy(i) - xy(i-1));
-  endfor
-  diff2(end+1) = 2*(A-xy(nn)); % 2(A-x_n)
-  
-  diff2(end+1) = 2*xy(nn+1); % 2(y_1 - y_0)
-  for i = nn+2:2*nn
-    diff2(end+1) = 2*(xy(i) - xy(i-1));
-  endfor
-  diff2(end+1) = 2*(B-xy(2*nn));
-
-  a(1,1) = diff2(1);
-  a(1,1+nn) = diff2(1+nb);
-  for i=2:nn;
-    a(i,i) = diff2(i);
-    a(i,i-1) = -diff2(i);
-    a(i,nn+i) = diff2(nb+i);
-    a(i,nn+i-1) = -diff2(nb+i);
-  endfor
-  a(nb,nn) = -diff2(nb);
-  a(nb,2*nn) = -diff2(2*nb);
+  ax = spdiags([2*(x_complet(2:nb) - x_complet(3:nb+1)) 2*(x_complet(2:nb) - x_complet(1:nn))], -1:0, nb, nn);
+  ay = spdiags([2*(y_complet(2:nb) - y_complet(3:nb+1)) 2*(y_complet(2:nb) - y_complet(1:nn))], -1:0, nb, nn);
+  a = [ax ay];
   return
 endfunction
 
@@ -162,18 +132,11 @@ endfunction
 % calcul de la matrice hessien de lagrangien
 function [hl] = calcul_hl(xy,lm)
   [nn, nb, x, y, x_complet, y_complet] = pre_calcul(xy);
-  hl = sparse(2*nn,2*nn); 
   
-  hl(1,1) = 2*(lm(1)+lm(2));
-  hl(nn+1,nn+1) = 2*(lm(1)+lm(2));
-  for i = 2:nn
-    hl(i,i) = 2*(lm(i)+lm(i+1));
-    hl(i,i-1) = -2*lm(i);
-    hl(i-1,i) = -2*lm(i);
-    hl(i+nn,i+nn) = 2*(lm(i)+lm(i+1));
-    hl(i+nn,i-1+nn) = -2*lm(i);
-    hl(i-1+nn,i+nn) = -2*lm(i);
-  endfor
+  v1 = 2.*(lm(1:nn) + lm(2:nb));
+  v2 = -2.*lm(2:nn);
+  
+  hl = spdiags([[v2' 0 v2' 0]' [v1' v1']' [0 v2' 0 v2']'], -1:1, 2*nn, 2*nn); 
   return
 endfunction
 
