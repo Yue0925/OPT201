@@ -15,11 +15,13 @@ function [e, c, g, a, hl, indic] = chs(indic,xy,lm)
   
   % vérification la bonne entrées
   if mod(length(xy),2)==1
+    printf("ERROR: La longeur de xy d'entrée est impaire.\n");
     indic = EXIT_FAILURE; % length(xy) impaire
     return
   endif
   
   if length(lm) != nb
+    printf("ERROR: La longeur de lm d'entrée n'égale pas à nn+1(nb).\n");
     indic = EXIT_FAILURE; % longueur de lm différent de nb
     return
   endif 
@@ -28,38 +30,38 @@ function [e, c, g, a, hl, indic] = chs(indic,xy,lm)
   switch (indic)
     
     case 1 % tracer la chaîne
-      printf("in case %d\n", indic);
+      %printf("in case %d\n", indic);
       plot(x_complet, y_complet, '-b') % tracé de la chaîne
       indic = EXIT_SUCESS;
       return
       
     case 2 % calcul de e, c
-      printf("in case %d\n", indic);
+      %printf("in case %d\n", indic);
       [e] = cal_e(xy);
       [c] = cal_c(xy);
       indic = EXIT_SUCESS;
       return
       
     case 4 % calcul de e, c, g, a
-      printf("in case %d\n", indic);
+      %printf("in case %d\n", indic);
       [e] = cal_e(xy);
       [c] = cal_c(xy);
       [g] = cal_g(xy);
-      verify_gradient(xy);
+      %verify_gradient(xy);
       [a] = cal_a(xy);
-      verify_Jacobian(xy);
+      %verify_Jacobian(xy);
       indic = EXIT_SUCESS;
       return
 
     case 5 % calcul de hl hessien de lagrangien
-      printf("in case %d\n", indic);
+      %printf("in case %d\n", indic);
       [hl] = calcul_hl(xy,lm);  % calcul de hl
       %verify_Hess_Lag(xy, lm);
       indic = EXIT_SUCESS;
-      
+      return
       
     otherwise
-      printf("ERROR invalid indic number %d\n ", indic);
+      printf("ERROR: invalid indic number %d.\n ", indic);
       indic = EXIT_FAILURE;
       return
    endswitch
