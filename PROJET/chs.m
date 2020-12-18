@@ -15,13 +15,13 @@ function [e, c, g, a, hl, indic] = chs(indic,xy,lm)
   
   % vérification la bonne entrées
   if mod(length(xy),2)==1
-    printf("ERROR: La longeur de xy d'entrée est impaire.\n");
+    error("ERROR: La longeur de xy d'entrée est impaire.\n");
     indic = EXIT_FAILURE; % length(xy) impaire
     return
   endif
   
   if length(lm) != nb
-    printf("ERROR: La longeur de lm d'entrée n'égale pas à nn+1(nb).\n");
+    error("ERROR: La longeur de lm d'entrée n'égale pas à nn+1(nb).\n");
     indic = EXIT_FAILURE; % longueur de lm différent de nb
     return
   endif 
@@ -61,7 +61,7 @@ function [e, c, g, a, hl, indic] = chs(indic,xy,lm)
       return
       
     otherwise
-      printf("ERROR: invalid indic number %d.\n ", indic);
+      error("ERROR: invalid indic number %d.\n ", indic);
       indic = EXIT_FAILURE;
       return
    endswitch

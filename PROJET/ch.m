@@ -37,7 +37,7 @@ endif
 
 
 options.tol = [1e-8 1e-8]; %précision
-options.maxit = 500; %nb max itérations
+options.maxit = 100; %nb max itérations
 
 
 [x, lm, info] = sqp(@chs, xy, lm, options);
