@@ -3,6 +3,9 @@ function [e, c, g, a, hl, indic] = chs(indic,xy,lm)
   global EXIT_SUCESS = 0; % sortie normale 
   global EXIT_FAILURE = 1; % paramètre(s) d’entrée non correct(s)
 
+  global NB_SIMUL % compteur d'appel du simulateur (variable externe)
+  NB_SIMUL = NB_SIMUL + 1;
+  
   % initialisation des output de fonction
   e = [];
   c = [];
@@ -20,11 +23,11 @@ function [e, c, g, a, hl, indic] = chs(indic,xy,lm)
     return
   endif
   
-  if length(lm) != nb
-    error("ERROR: La longeur de lm d'entrée n'égale pas à nn+1(nb).\n");
-    indic = EXIT_FAILURE; % longueur de lm différent de nb
-    return
-  endif 
+%  if length(lm) != nb
+%    error("ERROR: La longeur de lm d'entrée n'égale pas à nn+1(nb).\n");
+%    indic = EXIT_FAILURE; % longueur de lm différent de nb
+%    return
+%  endif 
   
   % pilote indic
   switch (indic)
