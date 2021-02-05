@@ -59,7 +59,6 @@ function [x, lm, info] = sqp(simul, x, lm, options)
     NB_SIMUL = 0;
     [grad_lag, F_z, grad_F] = calcul_F(x, lm, simul);
     p = -grad_F\F_z; % (la direction de descent) résoudre système
-    %p = -(grad_F' * grad_F)\(grad_F' * F_z); % mais en cas de matrice grad_F n'est pas inversible
     d = p(1:n); %d_k
     mu = p(n+1:end); %mu_k
  
@@ -138,12 +137,14 @@ endwhile
   F_h
   
   %% examiner le nature de solution
-  a
+  full(a)
   N = null(a) % noyeau de c'(x)
   hl_reduit = N'*hl*N % hessien réduite de lagrangien
   d = eig(hl_reduit) % vecteur des valeurs propres de hessien réduite
-  eig(hl)
-
+  if length(d)==0
+    d = eig(hl)
+  endif
+  
   if all(d > 0)
     printf("La matrice hessien réduite lagrangien est definie positive.\n");
     return
